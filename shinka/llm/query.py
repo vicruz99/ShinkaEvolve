@@ -20,6 +20,7 @@ from .models import (
     query_openai,
     query_deepseek,
     query_gemini,
+    query_local_gptoss_unsloth,  # ADDED THIS LINE
     QueryResult,
 )
 import logging
@@ -35,7 +36,7 @@ THINKING_TOKENS = {
     "max": 16384,
 }
 
-
+# this function doesn't seem to be used anywhere in the rest of the code
 def sample_batch_kwargs(
     num_samples: int,
     model_names: Union[List[str], str] = "gpt-4o-mini-2024-07-18",
@@ -50,6 +51,7 @@ def sample_batch_kwargs(
     attempts = 0
     max_attempts = num_samples * 10  # Prevent infinite loops
 
+    print("hey")
     while len(all_kwargs) < num_samples and attempts < max_attempts:
         kwargs_dict = sample_model_kwargs(
             model_names=model_names,
@@ -76,7 +78,7 @@ def sample_batch_kwargs(
 
     return all_kwargs
 
-
+# this function doesn't seem to be used anywhere in the rest of the code
 def sample_model_kwargs(
     model_names: Union[List[str], str] = "gpt-4o-mini-2024-07-18",
     temperatures: Union[List[float], float] = 0.0,
@@ -119,6 +121,7 @@ def sample_model_kwargs(
         + REASONING_GEMINI_MODELS
         + REASONING_AZURE_MODELS
         + REASONING_BEDROCK_MODELS
+        + ["local-gptoss-unsloth"]                                      # ADDED THIS LINE
     ):
         kwargs_dict["temperature"] = 1.0
     else:
@@ -172,6 +175,14 @@ def sample_model_kwargs(
                 "budget_tokens": random.choice(thinking_tokens),
             }
 
+    elif kwargs_dict["model_name"] in "local-gptoss-unsloth":                       # ADDED THIS LINE
+        print("Reaching here!")
+        kwargs_dict["max_tokens"] = random.choice(max_tokens)                       # ADDED THIS LINE
+        r_effort = random.choice(reasoning_efforts)                                 # ADDED THIS LINE
+        if r_effort != "auto":                                                      # ADDED THIS LINE
+            kwargs_dict["reasoning_effort"] = {"effort": r_effort}                         # ADDED THIS LINE
+        
+
     else:
         if (
             kwargs_dict["model_name"] in CLAUDE_MODELS
@@ -209,6 +220,8 @@ def query(
         query_fn = query_deepseek
     elif model_name in GEMINI_MODELS.keys():
         query_fn = query_gemini
+    elif "local-gptoss-unsloth" in model_name:                                                                    # ADDED THIS LINE                                                                    # ADDED THIS LINE
+        query_fn = query_local_gptoss_unsloth
     else:
         raise ValueError(f"Model {model_name} not supported.")
     result = query_fn(
