@@ -65,7 +65,8 @@ def get_client_model(model_name: str) -> tuple[openai.OpenAI, str]:
 
 class EmbeddingClient:
     def __init__(
-        self, model_name: str = "text-embedding-3-small", verbose: bool = False
+        #self, model_name: str = "text-embedding-3-small", verbose: bool = False
+        self, model_name = None, verbose: bool = False                                  # CHANGED THIS LINE
     ):
         """
         Initialize the EmbeddingClient.
@@ -73,8 +74,12 @@ class EmbeddingClient:
         Args:
             model (str): The OpenAI embedding model name to use.
         """
-        self.model_name = model_name
-        self.client, self.model = get_client_model(model_name)
+        if model_name:                                                          # ADDED THIS LINE -> if model_name is None, we won't initialize any client/model, as we will just use some auxiliary functions defined in this class
+            self.model_name = model_name
+            self.client, self.model = get_client_model(model_name)
+        else:
+            self.model = "none"
+        
         self.verbose = verbose
 
     def get_embedding(
