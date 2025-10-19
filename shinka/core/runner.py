@@ -32,6 +32,8 @@ from shinka.core.summarizer import MetaSummarizer
 from shinka.core.novelty_judge import NoveltyJudge
 from shinka.logo import print_gradient_logo
 
+from shinka.utils import truncate_log_blocks
+
 FOLDER_PREFIX = "gen"
 
 
@@ -501,6 +503,10 @@ class EvolutionRunner:
             metrics_val = results.get("metrics", {})
             stdout_log = results.get("stdout_log", "")
             stderr_log = results.get("stderr_log", "")
+            print(len(stderr_log))
+            stderr_log = truncate_log_blocks(stderr_log, max_bytes = 150000)
+            print(len(stderr_log))
+            print("Did truncation")
 
         combined_score = metrics_val.get("combined_score", 0.0)
         public_metrics = metrics_val.get("public", {})
@@ -805,6 +811,10 @@ class EvolutionRunner:
             metrics_val = results.get("metrics", {})
             stdout_log = results.get("stdout_log", "")
             stderr_log = results.get("stderr_log", "")
+            print(len(stderr_log))
+            stderr_log = truncate_log_blocks(stderr_log, max_bytes = 150000)
+            print(len(stderr_log))
+            print("Did truncation")
 
         combined_score = metrics_val.get("combined_score", 0.0)
         public_metrics = metrics_val.get("public", {})
