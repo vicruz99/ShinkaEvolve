@@ -21,6 +21,7 @@ from .models import (
     query_deepseek,
     query_gemini,
     query_local_gptoss_unsloth,  # ADDED THIS LINE
+    query_openrouter,
     QueryResult,
 )
 import logging
@@ -140,16 +141,13 @@ def sample_model_kwargs(
         r_effort = random.choice(reasoning_efforts)
         think_bool = r_effort != "auto"
         if think_bool:
-            thinking_tokens = [
-                t
-                for t in THINKING_TOKENS.values()
-                if t < kwargs_dict["max_tokens"] and t >= 1024
-            ]
+            t = THINKING_TOKENS[r_effort]
+            thinking_tokens = t if t < kwargs_dict["max_tokens"] else 1024
             kwargs_dict["extra_body"] = {
                 "extra_body": {
                     "google": {
                         "thinking_config": {
-                            "thinking_budget": random.choice(thinking_tokens),
+                            "thinking_budget": thinking_tokens,
                             "include_thoughts": True,
                         }
                     }
@@ -160,19 +158,17 @@ def sample_model_kwargs(
         REASONING_CLAUDE_MODELS + REASONING_BEDROCK_MODELS
     ):
         kwargs_dict["max_tokens"] = min(random.choice(max_tokens), 16384)
-        think_bool = random.choice(reasoning_efforts) != "auto"
+        r_effort = random.choice(reasoning_efforts)
+        think_bool = r_effort != "auto"
         if think_bool:
             # filter thinking tokens to be smaller than max_tokens
             # not auto THINKING_TOKENS
-            thinking_tokens = [
-                t
-                for t in THINKING_TOKENS.values()
-                if t < kwargs_dict["max_tokens"] and t >= 1024
-            ]
+            t = THINKING_TOKENS[r_effort]
+            thinking_tokens = t if t < kwargs_dict["max_tokens"] else 1024
             # sample only from thinking tokens that are valid
             kwargs_dict["thinking"] = {
                 "type": "enabled",
-                "budget_tokens": random.choice(thinking_tokens),
+                "budget_tokens": thinking_tokens,
             }
 
     elif kwargs_dict["model_name"] in "local-gptoss-unsloth":                       # ADDED THIS LINE
@@ -191,6 +187,7 @@ def sample_model_kwargs(
             or kwargs_dict["model_name"] in REASONING_BEDROCK_MODELS
             or kwargs_dict["model_name"] in DEEPSEEK_MODELS
             or kwargs_dict["model_name"] in REASONING_DEEPSEEK_MODELS
+            or "/" in kwargs_dict["model_name"] 
         ):
             kwargs_dict["max_tokens"] = random.choice(max_tokens)
         else:
@@ -222,6 +219,8 @@ def query(
         query_fn = query_gemini
     elif "local-gptoss-unsloth" in model_name:                                                                    # ADDED THIS LINE                                                                    # ADDED THIS LINE
         query_fn = query_local_gptoss_unsloth
+    elif "/" in model_name and not model_name.startswith("bedrock/"):
+        query_fn = query_openrouter
     else:
         raise ValueError(f"Model {model_name} not supported.")
     result = query_fn(

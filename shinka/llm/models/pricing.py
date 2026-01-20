@@ -35,6 +35,18 @@ CLAUDE_MODELS = {
         "input_price": 3.0 / M,
         "output_price": 15.0 / M,
     },
+    "claude-haiku-4-5-20251001": {
+        "input_price": 1.0 / M,
+        "output_price": 5.0 / M,
+    },
+    "claude-sonnet-4-5-20250929": {
+        "input_price": 3.0 / M,
+        "output_price": 15.0 / M,
+    },
+    "claude-opus-4-5-20251101": {
+        "input_price": 5.0 / M,
+        "output_price": 25.0 / M,
+    },
 }
 
 OPENAI_MODELS = {
@@ -114,6 +126,14 @@ OPENAI_MODELS = {
         "input_price": 0.05 / M,
         "output_price": 0.4 / M,
     },
+    "gpt-5.1": {
+        "input_price": 1.25 / M,
+        "output_price": 10.0 / M,
+    },
+    "gpt-5.2": {
+        "input_price": 1.75 / M,
+        "output_price": 14.0 / M,
+    },
 }
 
 
@@ -141,6 +161,14 @@ GEMINI_MODELS = {
         "input_price": 0.1 / M,
         "output_price": 0.4 / M,
     },
+    "gemini-3-pro-preview" : {
+        "input_price": 2.0 / M,
+        "output_price": 12.0 / M,
+    },
+    "gemini-3-flash-preview" : {
+        "input_price": 0.5 / M,
+        "output_price": 3.0 / M,
+    },
 }
 
 BEDROCK_MODELS = {
@@ -159,6 +187,15 @@ BEDROCK_MODELS = {
     "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0": CLAUDE_MODELS[
         "claude-4-sonnet-20250514"
     ],
+    "bedrock/anthropic.claude-haiku-4-5-20251001-v1:0": CLAUDE_MODELS[
+        "claude-haiku-4-5-20251001"
+    ],
+    "bedrock/anthropic.claude-sonnet-4-5-20250929-v1:0": CLAUDE_MODELS[
+        "claude-sonnet-4-5-20250929"
+    ],
+    "bedrock/anthropic.claude-opus-4-5-20251101-v1:0": CLAUDE_MODELS[
+        "claude-opus-4-5-20251101"
+    ],
 }
 
 REASONING_OAI_MODELS = [
@@ -171,11 +208,16 @@ REASONING_OAI_MODELS = [
     "gpt-5",
     "gpt-5-mini",
     "gpt-5-nano",
+    "gpt-5.1",
+    "gpt-5.2",
 ]
 
 REASONING_CLAUDE_MODELS = [
     "claude-3-7-sonnet-20250219",
     "claude-4-sonnet-20250514",
+    "claude-sonnet-4-5-20250929",
+    "claude-haiku-4-5-20251001",
+    "claude-opus-4-5-20251101",
 ]
 
 REASONING_DEEPSEEK_MODELS = [
@@ -186,6 +228,8 @@ REASONING_GEMINI_MODELS = [
     "gemini-2.5-pro",
     "gemini-2.5-flash",
     "gemini-2.5-flash-lite-preview-06-17",
+    "gemini-3-pro-preview",
+    "gemini-3-flash-preview",
 ]
 
 REASONING_AZURE_MODELS = [
@@ -200,3 +244,44 @@ REASONING_BEDROCK_MODELS = [
     "bedrock/us.anthropic.claude-3-7-sonnet-20250219-v1:0",
     "bedrock/us.anthropic.claude-sonnet-4-20250514-v1:0",
 ]
+
+import requests
+import backoff
+
+_OPENROUTER_PRICING_CACHE = {}
+
+@backoff.on_exception(
+        backoff.expo,
+        (requests.exceptions.RequestException, ValueError),
+        max_tries=5
+    )
+def get_openrouter_model_price(model, or_api_key):
+    global _OPENROUTER_PRICING_CACHE
+
+    if model in _OPENROUTER_PRICING_CACHE:
+        return _OPENROUTER_PRICING_CACHE[model]
+
+    if not _OPENROUTER_PRICING_CACHE:
+        response = requests.get(
+            "https://openrouter.ai/api/v1/models", 
+            headers={
+                "Authorization": f"Bearer {or_api_key}"
+            },
+            timeout=10
+        )
+        
+        response.raise_for_status()
+
+        data = response.json()["data"]
+        
+        for item in data:
+            m_id = item["id"]
+            pricing = item.get("pricing", {})
+            p_prompt = float(pricing.get("prompt", 0))
+            p_completion = float(pricing.get("completion", 0))
+            _OPENROUTER_PRICING_CACHE[m_id] = (p_prompt, p_completion)
+
+    if model in _OPENROUTER_PRICING_CACHE:
+        return _OPENROUTER_PRICING_CACHE[model]
+
+    raise ValueError(f"Model {model} not found in OpenRouter pricing list")

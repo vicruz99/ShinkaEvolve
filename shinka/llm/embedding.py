@@ -1,7 +1,9 @@
 import os
 import openai
+import google.generativeai as genai
 import pandas as pd
 from typing import Union, List, Optional, Tuple
+import requests
 import numpy as np
 import logging
 
@@ -22,14 +24,50 @@ AZURE_EMBEDDING_MODELS = [
     "azure-text-embedding-3-large",
 ]
 
+GEMINI_EMBEDDING_MODELS = [
+    "gemini-embedding-exp-03-07",
+    "gemini-embedding-001",
+]
+
 OPENAI_EMBEDDING_COSTS = {
     "text-embedding-3-small": 0.02 / M,
     "text-embedding-3-large": 0.13 / M,
 
 }
 
+# Gemini embedding costs (approximate - check current pricing)
+GEMINI_EMBEDDING_COSTS = {
+    "gemini-embedding-exp-03-07": 0.0 / M,  # Experimental model, often free
+    "gemini-embedding-001": 0.15 / M,  # Check current pricing
+}
 
-def get_client_model(model_name: str) -> tuple[openai.OpenAI, str]:
+def get_openrouter_embedding_model_price(model: str):
+    or_api_key = os.getenv("OPENROUTER_API_KEY")
+    headers = {}
+    if or_api_key:
+        headers["Authorization"] = f"Bearer {or_api_key}"
+        
+    response = requests.get(
+        "https://openrouter.ai/api/v1/embeddings/models",
+        headers={
+            "Authorization": f"Bearer {or_api_key}"
+        },
+    )
+    
+    response.raise_for_status()
+
+    data = response.json()["data"]
+    
+    for item in data:
+        if model == item["id"]:
+            pricing = item.get("pricing", {})
+            p_prompt = float(pricing.get("prompt", 0))
+
+            return p_prompt
+
+    raise ValueError(f"Model {model} not found in OpenRouter pricing list")
+    
+def get_client_model(model_name: str) -> tuple[Union[openai.OpenAI, str], str]:
     # OPENAI
     if model_name in OPENAI_EMBEDDING_MODELS:
         client = openai.OpenAI()
@@ -57,6 +95,34 @@ def get_client_model(model_name: str) -> tuple[openai.OpenAI, str]:
         client = openai.OpenAI(base_url=url,
                                api_key="filler") 
         
+    # GEMINI
+    elif model_name in GEMINI_EMBEDDING_MODELS:
+        # Configure Gemini API
+        api_key = os.getenv("GEMINI_API_KEY")
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY environment variable not set for Gemini models")
+        genai.configure(api_key=api_key)
+        client = "gemini"  # Use string identifier for Gemini
+        model_to_use = model_name
+    elif "/" in model_name:
+        api_key = os.getenv("OPENROUTER_API_KEY")
+        if not api_key:
+            raise ValueError(
+                f"Model '{model_name}' detected as OpenRouter model, "
+                "but OPENROUTER_API_KEY is not set in environment variables."
+            )
+        client = openai.OpenAI(
+            base_url="https://openrouter.ai/api/v1",
+            api_key=api_key,
+            default_headers={
+                "HTTP-Referer": os.getenv(
+                    "SHINKA_SITE_URL", "https://github.com/SakanaAI/ShinkaEvolve"
+                ),
+                "X-Title": os.getenv("SHINKA_APP_NAME", "ShinkaEvolve"),
+            },
+        )
+
+        model_to_use = model_name
     else:
         raise ValueError(f"Invalid embedding model: {model_name}")
 
@@ -72,13 +138,18 @@ class EmbeddingClient:
         Initialize the EmbeddingClient.
 
         Args:
-            model (str): The OpenAI embedding model name to use.
+            model (str): The OpenAI, Azure, or Gemini embedding model name to use.
         """
-        if model_name:                                                          # ADDED THIS LINE -> if model_name is None, we won't initialize any client/model, as we will just use some auxiliary functions defined in this class
-            self.model_name = model_name
-            self.client, self.model = get_client_model(model_name)
-        else:
-            self.model = "none"
+        # if model_name:                                                          # ADDED THIS LINE -> if model_name is None, we won't initialize any client/model, as we will just use some auxiliary functions defined in this class
+        #     self.model_name = model_name
+        #     self.client, self.model = get_client_model(model_name)
+        # else:
+        #     self.model = "none"
+
+        # I THINK MAIN REPO IN SAKANA DID CHANGES THAT MAKE IT UNNECESSARY TO USE PREVIOUS LINES . TRYING WITH THESE ONES
+        self.model_name = model_name
+        self.client, self.model = get_client_model(model_name)
+        
         
         self.verbose = verbose
 
@@ -101,18 +172,50 @@ class EmbeddingClient:
             single_code = True
         else:
             single_code = False
+        # Handle Gemini models
+        if self.model_name in GEMINI_EMBEDDING_MODELS:
+            try:
+                embeddings = []
+                total_tokens = 0
+                
+                for text in code:
+                    result = genai.embed_content(
+                        model=f"models/{self.model}",
+                        content=text,
+                        task_type="retrieval_document"
+                    )
+                    embeddings.append(result['embedding'])
+                    total_tokens += len(text.split())
+                
+                cost = total_tokens * GEMINI_EMBEDDING_COSTS.get(self.model, 0.0)
+                
+                if single_code:
+                    return embeddings[0] if embeddings else [], cost
+                else:
+                    return embeddings, cost
+            except Exception as e:
+                logger.error(f"Error getting Gemini embedding: {e}")
+                if single_code:
+                    return [], 0.0
+                else:
+                    return [[]], 0.0
+        # Handle OpenAI, Azure, and OpenRouter models
         try:
             response = self.client.embeddings.create(
-                model=self.model, input=code, encoding_format="float")
+                model=self.model, input=code, encoding_format="float", timeout=30.0)
             
             if self.model in OPENAI_EMBEDDING_COSTS:
-                cost = response.usage.total_tokens * OPENAI_EMBEDDING_COSTS[self.model]
+                cost_per_token = OPENAI_EMBEDDING_COSTS[self.model]
+            elif "/" in self.model: # Assume OpenRouter
+                cost_per_token = get_openrouter_embedding_model_price(self.model)
             elif self.model_name.startswith("local-"):
                 cost = 0.0
-            else:  
-                raise ValueError(f"Cost not defined for model {self.model}")
-            
-            # Extract embedding from response
+            else:
+                cost_per_token = 1.0 / M
+                print(f"Cost not defined for model {self.model}")
+                
+            cost = response.usage.total_tokens * cost_per_token
+
             if single_code:
                 return response.data[0].embedding, cost
             else:

@@ -45,17 +45,20 @@ dependencies = [
     "adjustText",
     "markdown",
     "aiofiles",
+    "google-generativeai",
 ]
 
 [tool.setuptools]
-packages = ["shinka"]
 script-files = ["shinka/shinka_launch", "shinka/shinka_visualize"]
+
+[tool.setuptools.packages.find]
+include = ["shinka", "shinka.*"]
 
 [tool.setuptools.package-data]
 "*" = ["*"]
 
-[tool.uv]
-dev-dependencies = [
+[dependency-groups]
+dev = [
     "pytest>=6.0",
     "black",
     "isort",
