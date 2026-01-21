@@ -52,7 +52,6 @@ def sample_batch_kwargs(
     attempts = 0
     max_attempts = num_samples * 10  # Prevent infinite loops
 
-    print("hey")
     while len(all_kwargs) < num_samples and attempts < max_attempts:
         kwargs_dict = sample_model_kwargs(
             model_names=model_names,
@@ -172,7 +171,7 @@ def sample_model_kwargs(
             }
 
     elif kwargs_dict["model_name"] in "local-gptoss-unsloth":                       # ADDED THIS LINE
-        print("Reaching here!")
+        #print("Reaching here!")
         kwargs_dict["max_tokens"] = random.choice(max_tokens)                       # ADDED THIS LINE
         r_effort = random.choice(reasoning_efforts)                                 # ADDED THIS LINE
         if r_effort != "auto":                                                      # ADDED THIS LINE
