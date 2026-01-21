@@ -3,24 +3,12 @@ evaluate_function:
   program_path: ???
   results_dir: ???
 
-distributed_job_config:
-  _target_: shinka.launch.SlurmCondaJobConfig
-  modules:
-  - "cuda/12.4"
-  - "cudnn/8.9.7"
-  - "hpcx/2.20"
-  eval_program_path: "shinka/eval_hydra.py"
-  conda_env: "shinka"
-  time: "00:10:00" 
-  cpus: 1
-  gpus: 0
-  mem: "8G"
 
 evo_config:
   task_sys_msg: |
     {evo_config.task_sys_msg}
   language: "{evo_config.language}"
   init_program_path: "examples/{task_name}/initial.py"
-  job_type: "slurm_conda"
+  job_type: "local"
 
 exp_name: "shinka_{task_name}"
