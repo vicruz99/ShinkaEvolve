@@ -209,7 +209,7 @@ class EmbeddingClient:
             elif "/" in self.model: # Assume OpenRouter
                 cost_per_token = get_openrouter_embedding_model_price(self.model)
             elif self.model_name.startswith("local-"):
-                cost = 0.0
+                cost_per_token = 0.0
             else:
                 cost_per_token = 1.0 / M
                 print(f"Cost not defined for model {self.model}")
