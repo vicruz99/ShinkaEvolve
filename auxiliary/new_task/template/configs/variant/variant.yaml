@@ -1,0 +1,18 @@
+defaults:
+  - override /database@_global_: island_small
+  - override /evolution@_global_: small_budget
+  - override /task@_global_: "{task_name}"
+  - override /cluster@_global_: local
+  - _self_
+
+
+# Override specific parameters
+
+variant_suffix: "{variant_suffix}"
+
+evo_config:
+  llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8080/v1"]
+  meta_llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8080/v1"]
+  embedding_model: "local-nomic-embed-text:v1.5-http://localhost:11434/v1"
+  #results_dir: results/shinka_{task_name}/2025.10.13152106_gptoss120b_guadiana_test
+  num_generations: 50
