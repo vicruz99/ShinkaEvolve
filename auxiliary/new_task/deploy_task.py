@@ -5,14 +5,16 @@ import re
 import shutil
 import argparse
 from pathlib import Path
-from omegaconf import OmegaConf
 
+# Use omegaconf since hydra-core is installed
+try:
+    from omegaconf import OmegaConf
+except ImportError:
+    print("Error: OmegaConf is missing. Ensure hydra-core is installed.")
+    sys.exit(1)
 
 def flatten_dict(d, parent_key='', sep='.'):
-    """
-    Flattens a nested dictionary.
-    Example: {'evo_config': {'language': 'python'}} -> {'evo_config.language': 'python'}
-    """
+    """Flattens a nested dictionary."""
     items = []
     for k, v in d.items():
         new_key = f"{parent_key}{sep}{k}" if parent_key else k
@@ -23,10 +25,7 @@ def flatten_dict(d, parent_key='', sep='.'):
     return dict(items)
 
 def extract_placeholders(text):
-    """
-    Finds all unique strings inside curly braces, e.g., {task_name} -> 'task_name'.
-    Returns a set of keys.
-    """
+    """Finds unique strings inside curly braces."""
     pattern = r'(?<!\{)\{([a-zA-Z0-9_.]+)\}(?!\})'
     return set(re.findall(pattern, text))
 
@@ -39,10 +38,7 @@ def indent_text(text, spaces=4):
     return f"\n{indentation}".join(lines)
 
 def render_template(tpl_path, flat_config):
-    """
-    Reads a template, checks for missing keys, and returns the rendered content.
-    Does NOT write to disk.
-    """
+    """Reads a template, checks for missing keys, and returns rendered content."""
     if not tpl_path.exists():
         print(f"Error: Template not found at {tpl_path}")
         sys.exit(1)
@@ -110,26 +106,22 @@ def main():
     task_tpl_path = template_root / "configs" / "task" / tpl_conf.get("task", "task.yaml")
     variant_tpl_path = template_root / "configs" / "variant" / tpl_conf.get("variant", "variant.yaml")
 
-    # Render in memory first to catch errors before asking user
     task_content, used_task = render_template(task_tpl_path, flat_config)
     variant_content, used_variant = render_template(variant_tpl_path, flat_config)
 
-    # Identify files to copy
-    files_to_copy = []
-    for py_file in ["initial.py", "evaluate.py"]:
-        src = task_source_dir / py_file
-        if src.exists():
-            files_to_copy.append(py_file)
-        else:
-            print(f"Warning: {py_file} not found in {task_source_dir}")
+    # Identify ALL items to copy (excluding config.yaml and junk)
+    items_to_copy = []
+    if task_source_dir.exists():
+        for item in task_source_dir.iterdir():
+            if item.name == "config.yaml":
+                continue
+            if item.name == "__pycache__" or item.name.startswith("."):
+                continue
+            items_to_copy.append(item)
 
     # Define Destinations
     dest_examples_dir = repo_root / "examples" / deploy_name
-    
-    # Task config goes to configs/task/{task_name}.yaml
     dest_task_config = repo_root / "configs" / "task" / f"{deploy_name}.yaml"
-    
-    # Variant config goes to configs/variant/{task_name}/variant.yaml
     dest_variant_dir = repo_root / "configs" / "variant" / deploy_name
     dest_variant_config = dest_variant_dir / "variant.yaml"
 
@@ -142,9 +134,12 @@ def main():
     print(f"    + {dest_examples_dir}")
     print(f"    + {dest_variant_dir}")
     
-    print(f"\n[2] Copy Python Files:")
-    for f in files_to_copy:
-        print(f"    + {task_source_dir / f} -> {dest_examples_dir / f}")
+    print(f"\n[2] Copy Task Files:")
+    if not items_to_copy:
+        print("    (No files found to copy other than config.yaml)")
+    for item in items_to_copy:
+        ftype = "DIR " if item.is_dir() else "FILE"
+        print(f"    [{ftype}] {item.name} -> {dest_examples_dir / item.name}")
         
     print(f"\n[3] Generate Config Files:")
     print(f"    + {dest_task_config}")
@@ -152,17 +147,7 @@ def main():
     
     print("\n" + "-"*50)
     
-    # Check for unused keys just for info
-    all_used_keys = used_task.union(used_variant)
-    available_keys = {k for k in flat_config.keys() if not k.startswith("template.")}
-    unused_keys = available_keys - all_used_keys
-    if unused_keys:
-        print("[INFO] Unused config keys (safe to ignore):")
-        for k in sorted(unused_keys):
-            print(f"    - {k}")
-    
     response = input("\n>>> Do you want to proceed with these changes? [y/N]: ").strip().lower()
-    
     if response != 'y':
         print("Aborted by user.")
         sys.exit(0)
@@ -179,12 +164,20 @@ def main():
         os.makedirs(dest_variant_dir, exist_ok=True)
         print(f"Created {dest_variant_dir}")
 
-    # B. Copy Files
-    for py_file in files_to_copy:
-        src = task_source_dir / py_file
-        dst = dest_examples_dir / py_file
-        shutil.copy(src, dst)
-        print(f"Copied {py_file}")
+    # B. Copy Files/Dirs
+    for item in items_to_copy:
+        src = item
+        dst = dest_examples_dir / item.name
+        
+        if item.is_dir():
+            # dirs_exist_ok=True allows overwriting if dir exists
+            if dst.exists():
+                 shutil.rmtree(dst) # Clean overwrite for folders
+            shutil.copytree(src, dst)
+            print(f"Copied directory {item.name}/")
+        else:
+            shutil.copy(src, dst)
+            print(f"Copied file {item.name}")
 
     # C. Write Configs
     dest_task_config.parent.mkdir(parents=True, exist_ok=True)
