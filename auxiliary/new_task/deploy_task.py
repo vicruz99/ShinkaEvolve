@@ -117,7 +117,8 @@ def main():
                 continue
             if item.name == "__pycache__" or item.name.startswith("."):
                 continue
-            if item.name == "requirements.txt"
+            if item.name == "requirements.txt":
+                continue
             items_to_copy.append(item)
 
     # Define Destinations

@@ -58,7 +58,7 @@ To clean up a task and remove all associated files (configs and examples), run:
 python delete_task.py my_new_task
 ```
 
-### Configuring templates
+### Configuring templates (Optional)
 `my_new_task.yaml` and `my_new_task_example.yaml` are created from the configuration template files present in `auxiliary/new_task/template`. You can configure these templates or add new ones. You can select which templates to use by referencing the template file names in:
 
 ```yaml
@@ -68,6 +68,11 @@ template:
 ```
 
 To add new parameters to these templates just add {new_parameter} wherever you wish, and then add the corresponding parameter in the `auxiliary/new_task/tasks/my_new_task/config.yaml`. The parameters will automatically be assigned to the right stop in the template files.
+
+
+### 5. Create a venv (Optional)
+
+If you wish 
 
 ---
 

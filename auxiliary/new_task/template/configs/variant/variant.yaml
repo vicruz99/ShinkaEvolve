@@ -9,7 +9,7 @@ defaults:
 # Override specific parameters
 
 job_config:
-  python_path: python
+  python_path: "{job_config.python_path}"
 
 variant_suffix: "{variant_suffix}"
 
