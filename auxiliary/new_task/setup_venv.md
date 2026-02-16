@@ -1,0 +1,36 @@
+- Create uv venv
+- Create pyproject
+- In the end, don't forget to install shinka with no deps. Like this:
+
+#### Don't forget to run this line in the end, to install shinka!!!!!
+# uv pip install --no-deps -e ../..
+
+- This is an example of a pyproject.toml
+
+[project]
+name = "alphaevolve-math"
+version = "0.1.0"
+description = "AlphaEvolve Math problems environment"
+requires-python = ">=3.9"
+dependencies = [
+    "numpy",
+    "scipy",
+    "optax",
+    "sympy",
+    "tqdm",
+    "hydra-core==1.3.2",
+    "jax",                  # Standard CPU version
+    "matplotlib"            # for visualization purposes, in the notebooks that accompany the tasks
+    "jupyter"               # For use inside a jupyter notebook
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+
+#### Don't forget to run this line in the end, to install shinka!!!!!
+# uv pip install --no-deps -e ../..
