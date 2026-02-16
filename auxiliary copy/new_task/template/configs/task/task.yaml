@@ -1,0 +1,14 @@
+evaluate_function:
+  _target_: examples.{task_name}.evaluate.main
+  program_path: ???
+  results_dir: ???
+
+
+evo_config:
+  task_sys_msg: |
+    {evo_config.task_sys_msg}
+  language: "{evo_config.language}"
+  init_program_path: "examples/{task_name}/initial.py"
+  job_type: "local"
+
+exp_name: "shinka_{task_name}"

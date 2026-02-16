@@ -1,0 +1,20 @@
+template:
+  task: task.yaml                         # filename of the task config template ---> template/configs/task/{template.task}.yaml
+  variant: variant.yaml                   # filename of the variant config template ---> template/configs/task/{template.variant}.yaml
+
+
+#### Parameters that will replaced inside task.yaml and variant.yaml
+
+task_name: "autocorrelation_ineq"
+variant_suffix: "_example"
+
+# These fields map to {evo_config.task_sys_msg} and {evo_config.language}
+evo_config:
+  language: "python"
+  task_sys_msg: |
+    You are an expert mathematician.
+    Your goal is to find a sequence of coefficients that minimizes the autocorrelation peak.
+    Focus on finding a sequence where the ratio BENCHMARK / c1 is maximized.
+
+
+hey_bish: "hey"
