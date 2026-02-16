@@ -1,0 +1,22 @@
+defaults:
+  - override /database@_global_: island_large
+  - override /evolution@_global_: large_budget
+  - override /task@_global_: circle_packing
+  - override /cluster@_global_: local
+  - _self_
+
+
+# Override specific parameters
+
+job_config:
+  python_path: "examples/circle_packing/venv/bin/python"
+
+variant_suffix: "_test"
+
+evo_config:
+  #llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8080/v1"]
+  #meta_llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8080/v1"]
+  llm_models: ["local-gptoss-unsloth-http://146.193.228.22:8080/v1"]
+  meta_llm_models: ["local-gptoss-unsloth-http://146.193.228.22:8080/v1"]
+  embedding_model: "local-nomic-embed-text:v1.5-http://localhost:11434/v1"
+  num_generations: 5
