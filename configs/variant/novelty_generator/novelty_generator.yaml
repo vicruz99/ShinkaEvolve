@@ -1,0 +1,14 @@
+defaults:
+  - override /database@_global_: island_medium
+  - override /evolution@_global_: medium_budget
+  - override /task@_global_: novelty_generator
+  - override /cluster@_global_: local
+  - _self_
+
+
+variant_suffix: "_gptoss120b_guadiana"
+
+evo_config:
+  llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8080/v1"]
+  meta_llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8080/v1"]
+  embedding_model: "local-nomic-embed-text:v1.5-http://localhost:11434/v1"
