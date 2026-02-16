@@ -15,3 +15,6 @@ evo_config:
     You are an expert mathematician.
     Your goal is to find a sequence of coefficients that minimizes the autocorrelation peak.
     Focus on finding a sequence where the ratio BENCHMARK / c1 is maximized.
+
+
+hey_bish: "hey"
