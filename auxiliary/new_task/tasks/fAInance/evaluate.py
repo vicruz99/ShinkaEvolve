@@ -46,7 +46,6 @@ def get_experiment_kwargs(run_index: int) -> Dict[str, Any]:
     companies_we_have_data_on = "sp500_companies_we_have_data_on.csv"
     sp500_companies_we_have_data_on = pd.read_csv(DATA_PATH + companies_we_have_data_on, header=None)[0].tolist()
 
-
     #Select one company randomly to be representative of the market (we will fit this company and use its parameters for all others)
     rand_index = random.randrange(len(missed_companies)) #Getting a random index
     random_company = sp500_companies_we_have_data_on[rand_index]
