@@ -116,7 +116,7 @@ def main(program_path: str, results_dir: str):
     print(f"Evaluating program: {program_path}")
     
     FUNCTION_NAME_TO_TEST = "strategy_function"                 # Must match the function name in initial.py
-    NUMBER_OF_RUNS = 10                                          # How many times to run the code
+    NUMBER_OF_RUNS = 100                                          # How many times to run the code
     
     metrics, correct, error_msg = run_shinka_eval(
         program_path=program_path,
