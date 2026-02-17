@@ -57,8 +57,8 @@ def run_shinka_eval(
     experiment_fn_name: str,
     num_runs: int,
     get_experiment_kwargs: Optional[Callable[[int], Dict[str, Any]]] = None,
-    aggregate_metrics_fn: Optional[Callable[[List[Any]], Dict[str, Any]]] = None,
-    validate_fn: Optional[Callable[[Any], Tuple[bool, Optional[str]]]] = None,
+    aggregate_metrics_fn: Optional[Callable[[List[Any], List[Dict[str, Any]]], Dict[str, Any]]] = None,
+    validate_fn: Optional[Callable[[[Any], Dict[str, Any]], Tuple[bool, Optional[str]]]] = None,
     default_metrics_on_error: Optional[Dict[str, Any]] = None,
 ) -> Tuple[Dict[str, Any], bool, Optional[str]]:
     """
@@ -72,10 +72,11 @@ def run_shinka_eval(
         num_runs: Number of times to run the experiment function.
         get_experiment_kwargs: Opt. fn (run_idx_0_based -> kwargs_dict)
                                for experiment args. Seed passed if None.
-        aggregate_metrics_fn: Opt. fn (raw_results_list -> metrics_dict)
-                              for aggregation. If None, basic run stats
+        aggregate_metrics_fn: Opt. fn (raw_results_list, kwargs_list -> metrics_dict)
+                              for aggregation. Receives both results and the kwargs
+                              used for each run. If None, basic run stats
                               (count, time) are recorded.
-        validate_fn: Opt. fn (result -> (is_valid, error_msg)) to validate
+        validate_fn: Opt. fn (result, kwargs -> (is_valid, error_msg)) to validate
                        each run. Affects overall correctness.
         default_metrics_on_error: Metrics for eval failure. Uses predefined
                                   default if None.
@@ -97,6 +98,7 @@ def run_shinka_eval(
     num_invalid_runs = 0
 
     all_run_results: List[Any] = []
+    all_run_kwargs: List[Dict[str, Any]] = []
     execution_times: List[float] = []
 
     try:
@@ -120,10 +122,11 @@ def run_shinka_eval(
             end_time = time.perf_counter()
 
             all_run_results.append(run_result)
+            all_run_kwargs.append(kwargs)
             execution_times.append(end_time - start_time)
 
             if validate_fn:
-                is_valid, validation_err_msg = validate_fn(run_result)
+                is_valid, validation_err_msg = validate_fn(run_result, **kwargs)
                 if not is_valid:
                     num_invalid_runs += 1
                     overall_correct_flag = False
@@ -142,7 +145,7 @@ def run_shinka_eval(
 
         metrics: Dict[str, Any]
         if aggregate_metrics_fn:
-            metrics = aggregate_metrics_fn(all_run_results)
+            metrics = aggregate_metrics_fn(all_run_results, all_run_kwargs)
         else:
             metrics = {"num_successful_runs": len(all_run_results)}
             if all_run_results:
