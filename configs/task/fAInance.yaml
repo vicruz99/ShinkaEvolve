@@ -4,7 +4,7 @@ evaluate_function:
   results_dir: ???
 
 distributed_job_config:
-  eval_program_path: "examples/fAInance/evaluate.py" 
+  eval_program_path: "shinka/eval_hydra.py"
 
 exp_name: "fAInance"
 
