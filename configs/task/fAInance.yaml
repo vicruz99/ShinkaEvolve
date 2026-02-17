@@ -1,0 +1,12 @@
+evaluate_function:
+  _target_: examples.fAInance.evaluate.main
+  program_path: ???
+  results_dir: ???
+
+distributed_job_config:
+  eval_program_path: "examples/fAInance/evaluate.py" 
+
+exp_name: "fAInance"
+
+job_config:
+  python_path: "examples/fAInance/.venv/bin/python"
