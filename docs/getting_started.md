@@ -2,8 +2,6 @@
 
 Shinka is a framework that combines Large Language Models (LLMs) with evolutionary algorithms to drive scientific discovery. This guide will help you get started with installing, configuring, and running your first evolutionary experiments.
 
-![](../docs/conceptual.png)
-
 ## Table of Contents
 
 1. [What is Shinka?](#what-is-shinka)
@@ -251,17 +249,22 @@ from shinka.core import run_shinka_eval
 
 def main(program_path: str, results_dir: str):
     """Main evaluation function called by Shinka"""
-
+    
     metrics, correct, error_msg = run_shinka_eval(
         program_path=program_path,
         results_dir=results_dir,
         experiment_fn_name="run_packing",        # Function to call in evolved code
         num_runs=1,                              # Number of test runs
+        run_workers=1,                           # >1 enables per-run process parallelism
         get_experiment_kwargs=get_kwargs_fn,     # Arguments for each run
         validate_fn=validation_function,         # Validation logic
         aggregate_metrics_fn=metrics_function,   # Metrics computation
     )
 ```
+
+`run_workers` controls only repeated runs *inside one evaluation script call*.  
+This is separate from evolution-level job concurrency (`max_parallel_jobs`).  
+Early stopping (`early_stop_method`) is currently supported only with `run_workers=1`.
 
 **Key Components:**
 
@@ -270,11 +273,11 @@ def main(program_path: str, results_dir: str):
 def validate_packing(run_output):
     """Returns (is_valid: bool, error_msg: str or None)"""
     centers, radii, reported_sum = run_output
-
+    
     # Check constraints (bounds, overlaps, etc.)
     if constraint_violated:
         return False, "Specific error description"
-
+    
     return True, None  # Valid solution
 ```
 
@@ -282,10 +285,10 @@ def validate_packing(run_output):
 ```python
 def aggregate_metrics(results, results_dir):
     """Returns metrics dictionary with required structure"""
-
+    
     # Extract data from results
     centers, radii, reported_sum = results[0]
-
+    
     return {
         "combined_score": float(reported_sum),    # PRIMARY FITNESS (higher = better)
         "public": {                               # Visible in WebUI/logs
