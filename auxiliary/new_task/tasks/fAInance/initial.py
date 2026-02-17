@@ -17,6 +17,7 @@ def strategy_function(
     short_window=10,
     long_window=30,
     default=1,
+    **kwargs      # leave kwargs to allow for future extensions without breaking the interface
 ):
     """
     action[t] in {+1, -1} computed using prices up to time t (including price[t]),
@@ -52,7 +53,7 @@ if __name__ == "__main__":
     print("Running initial program manually...")
     
     try:
-        test_company = pd.read_csv("/home/guests2/vic/work/SP 500 Daily Stock Values - Normalized/AOS_normalized.csv")
+        test_company = pd.read_csv("data/SP 500 Daily Stock Values - Normalized/SIG_normalized.csv")
         test_company = test_company.sort_values("timestamp")
         test_company['close'] = test_company['normalized_close'].copy()
         test_company['open'] = test_company['normalized_open'].copy()
