@@ -5,20 +5,21 @@ defaults:
   - override /cluster@_global_: local
   - _self_
 
-
 # Override specific parameters
 
 job_config:
   time: "00:3:00"  # Max time for the entire job (HH:MM:SS)
+  eval_program_path: "examples/fAInance/evaluate_single.py"
+  extra_cmd_args: {"company": "NVDA"}
 
-variant_suffix: _arima_simple
+variant_suffix: _nvda
 
 evo_config:
   init_program_path: "examples/fAInance/initial.py"
-  llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8080/v1"]
-  meta_llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8080/v1"]
+  llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8081/v1"]
+  meta_llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8081/v1"]
   embedding_model: "local-nomic-embed-text:v1.5-http://localhost:11434/v1"
-  num_generations: 1000
+  num_generations: 3000
   task_sys_msg: |
       SETTING:
       Act as an expert quantitative researcher and analisys, quantitative trader, software developer, with extensive knowlodge on numerical optimization, mathematics, statistics and dinamical modelling
@@ -26,12 +27,10 @@ evo_config:
       
       This strategy returns a set of actions to perform on each trading day (+1 -> buy; -1 -> sell; no other values besides +1 and -1 are allowed).
 
-      You have access to the time series data of 'open' stock values for a random company to build your strategy. However, your strategy will be tested against the data of hundreds of other companies as well.
+      You have access to the time series data of 'open' stock values for a company to build your strategy. Your goal is to find the best possible strategy for this company that can generalize well in the future.
       Focus on going beyond the current strategy, not only changing it, but also suggesting fundamentally new approaches and finding new heuristics - don't just tweak parameters.
 
       Make sure that your strategy does not "look ahead" at the data, so that to predict the next day t+1 the strategy only uses information until t.
 
       Make sure that the changes you propose are consistent with each other, and do not expect user input fine-tunning. For example, if you refer to a new config variable
       somewhere, you should also propose a change to add that variable.
-                
-      Best known result is 6.169762141523945

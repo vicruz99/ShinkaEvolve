@@ -50,23 +50,26 @@ def validate_fn(run_output: Any, **kwargs) -> Tuple[bool, str]:
 
 
 
-def get_experiment_kwargs(run_index: int) -> Dict[str, Any]:
+def get_experiment_kwargs(run_index: int, company: str = "NVDA") -> Dict[str, Any]:
 
-    DATA_PATH = "data/"
-    sp500_companies_we_have_data_on = pd.read_csv(DATA_PATH + "sp500_companies_we_have_data_on.csv", header=None)[0].tolist()
+    DATA_PATH = "examples/fAInance/data/"
+    DATA_PATH = "/home/guests2/vic/work/projects/phd/R2/evolve/shinka_evolve/ShinkaEvolve/examples/fAInance/data/"
+    #sp500_companies_we_have_data_on = pd.read_csv(DATA_PATH + "sp500_companies_we_have_data_on.csv", header=None)[0].tolist()
     # Remove an element from the list
-    sp500_companies_we_have_data_on.remove("CPWR")
-    sp500_companies_we_have_data_on.remove("PCP")
-    sp500_companies_we_have_data_on.remove("SIVB")
-    random_company = random.choice(sp500_companies_we_have_data_on)
-    sample_company = pd.read_csv(DATA_PATH + "SP 500 Daily Stock Values - Normalized/" + random_company + "_normalized.csv") #Loading the data for that company
+    #sp500_companies_we_have_data_on.remove("CPWR")
+    #sp500_companies_we_have_data_on.remove("PCP")
+    #sp500_companies_we_have_data_on.remove("SIVB")
+    #random_company = random.choice(sp500_companies_we_have_data_on)
+    sample_company = pd.read_csv(DATA_PATH + "SP 500 Daily Stock Values - Normalized/" + company + "_normalized.csv") #Loading the data for that company
 
     sample_company = sample_company.sort_values("timestamp")
     sample_company['close'] = sample_company['normalized_close'].copy()
     sample_company['open'] = sample_company['normalized_open'].copy()
 
+    # Remove the last year
+    sample_company = sample_company[sample_company['timestamp'] < "2025-01-01"].copy()
     return {"df" : sample_company,
-            "company_name": random_company}
+            "company_name": company}
 
 
 def evaluation_function(data_db, signal):
@@ -110,35 +113,37 @@ def aggregate_metrics_fn(results: List[Any], all_run_kwargs: List[Dict[str, Any]
     if not results:
         return {"combined_score": 0.0, "error": "No valid results"}
 
-    companies_score = {}
     for signal, kwargs in zip(results, all_run_kwargs):
         company_name = kwargs.get("company_name")
         data_db = kwargs.get("df")
         score = evaluation_function(data_db, signal)
-        companies_score[company_name] = score
     
     # Return the dictionary
     return {
-        "combined_score": np.mean(list(companies_score.values())) if companies_score else np.NaN,
-        "individual_companie_scores": companies_score
+        "combined_score": score,
+        "company_name": company_name
     }
 
 
-def main(program_path: str, results_dir: str):
+def main(program_path: str, results_dir: str, company: str = "NVDA"):
     """
     Main entry point for evaluation.
     """
     print(f"Evaluating program: {program_path}")
     
-    FUNCTION_NAME_TO_TEST = "strategy_function"                     # Must match the function name in initial.py
-    NUMBER_OF_RUNS = 200                                            # How many times to run the code  - IT WOULD BE COOL FOR THIS TO BE CONFIGURABLE FROM THE OUTSIDE, BUT FOR NOW LET'S KEEP IT FIXED TO A HIGH NUMBER TO ENCOURAGE ROBUSTNESS AND AVOID OVERFITTING TO THE TEST SET.
+    FUNCTION_NAME_TO_TEST = "strategy_function"                      # Must match the function name in initial.py
+    NUMBER_OF_RUNS = 1                                               # How many times to run the code  - IT WOULD BE COOL FOR THIS TO BE CONFIGURABLE FROM THE OUTSIDE, BUT FOR NOW LET'S KEEP IT FIXED TO A HIGH NUMBER TO ENCOURAGE ROBUSTNESS AND AVOID OVERFITTING TO THE TEST SET.
+
+    # Create a closure to pass the company parameter to get_experiment_kwargs
+    def get_kwargs_with_company(run_index: int) -> Dict[str, Any]:
+        return get_experiment_kwargs(run_index, company=company)
     
     metrics, correct, error_msg = run_shinka_eval(
         program_path=program_path,
         results_dir=results_dir,
         experiment_fn_name=FUNCTION_NAME_TO_TEST,
         num_runs=NUMBER_OF_RUNS,
-        get_experiment_kwargs=get_experiment_kwargs,
+        get_experiment_kwargs=get_kwargs_with_company,
         validate_fn=validate_fn,
         aggregate_metrics_fn=aggregate_metrics_fn
     )
@@ -156,6 +161,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--program_path", type=str, default="initial.py")
     parser.add_argument("--results_dir", type=str, default="results")
+    parser.add_argument("--company", type=str, default="NVDA")
+    
     args = parser.parse_args()
     
-    main(args.program_path, args.results_dir)
+    main(args.program_path, args.results_dir, args.company)

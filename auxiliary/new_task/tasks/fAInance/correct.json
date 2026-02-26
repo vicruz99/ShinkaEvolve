@@ -1,0 +1,4 @@
+{
+    "correct": false,
+    "error": "Validation failed: The Series cannot be empty or contain only NaNs."
+}
