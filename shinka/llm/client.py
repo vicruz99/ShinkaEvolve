@@ -82,26 +82,33 @@ def get_client_llm(model_name: str, structured_output: bool = False) -> Tuple[An
                 mode=instructor.Mode.GEMINI_JSON,
             )
     
-    #### LOCAL GPTOSS UNSLOTH MODEL ####
+    #### LOCAL MODEL - open ai api ####
     elif provider is None:
-        if "local-gptoss-unsloth" in model_name:
-        # Extract url from model_name
-        pattern = r"https?://"
-        match = re.search(pattern, model_name)
-        if match:
-            start_index = match.start()
-            url = model_name[start_index:]
-        else:
-            raise ValueError(f"Invalid URL in model name: {model_name}")
-        client = openai.OpenAI(                                                                            # ADDED THIS LINE                
-            api_key="filler",                                                                                  # ADDED THIS LINE        
-            base_url=url
-            )                                                                                    # ADDED THIS LINE
-        if structured_output:                                                                        # ADDED THIS LINE              
-            client = instructor.from_openai(                                                             # ADDED THIS LINE      
-                client,                                                                                    # ADDED THIS LINE    
-                mode=instructor.Mode.JSON,                                                             # ADDED THIS LINE                
-            )      
+        if "local" in model_name:
+
+            # Extract url from model_name
+            pattern = r"https?://"
+            match = re.search(pattern, model_name)
+            if match:
+                start_index = match.start()
+                url = model_name[start_index:]
+            else:
+                raise ValueError(f"Invalid URL in model name: {model_name}")
+            
+            # Extract model name from model_name
+            match = re.search(r"local-(.*?)-http", model_name)                          # when using vllm and open ai gpt oss 120b, because i am extracting model_name, so openai/..., the query that will be chosen is the one from open ai, instead of query local... a happy accident!
+            if match:
+                model_name = match.group(1)
+
+            client = openai.OpenAI(                                                                            # ADDED THIS LINE                
+                api_key="filler",                                                                                  # ADDED THIS LINE        
+                base_url=url
+                )                                                                                    # ADDED THIS LINE
+            if structured_output:                                                                        # ADDED THIS LINE              
+                client = instructor.from_openai(                                                             # ADDED THIS LINE      
+                    client,                                                                                    # ADDED THIS LINE    
+                    mode=instructor.Mode.JSON,                                                             # ADDED THIS LINE                
+                )      
             
     elif provider == "fugu":
         client = openai.OpenAI(

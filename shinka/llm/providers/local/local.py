@@ -27,7 +27,7 @@ def backoff_handler(details):
     on_backoff=backoff_handler,
 )
 
-def query_local_gptoss_unsloth(
+def query_local(
     client,
     model,
     msg,

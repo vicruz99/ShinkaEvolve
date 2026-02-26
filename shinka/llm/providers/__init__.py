@@ -1,6 +1,7 @@
 from .anthropic import query_anthropic, query_anthropic_async
 from .openai import query_openai, query_openai_async
 from .deepseek import query_deepseek, query_deepseek_async
+from .local.local import query_local            # ADDED THIS LINE
 from .gemini import query_gemini, query_gemini_async
 from .result import QueryResult
 
@@ -14,4 +15,5 @@ __all__ = [
     "query_deepseek_async",
     "query_gemini_async",
     "QueryResult",
+    "query_local",              # ADDED THIS LINE
 ]

@@ -7,7 +7,7 @@ from .providers import (
     query_openai,
     query_deepseek,
     query_gemini,
-    query_local_gptoss_unsloth,
+    query_local,
     query_anthropic_async,
     query_openai_async,
     query_deepseek_async,
@@ -43,8 +43,8 @@ def query(
     elif provider == "google":
         query_fn = query_gemini
     elif provider is None:
-        if "local-gptoss-unsloth" in model_name:                                                                    # ADDED THIS LINE                                                                    # ADDED THIS LINE
-            query_fn = query_local_gptoss_unsloth
+        if "unsloth" in model_name:                                                                    # ADDED THIS LINE                                                                    # ADDED THIS LINE
+            query_fn = query_local
     else:
         raise ValueError(f"Model {model_name} not supported.")
     result = query_fn(

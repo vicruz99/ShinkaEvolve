@@ -5,6 +5,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 from google import genai
 from .providers.pricing import get_provider
+import re
 
 env_path = Path(__file__).parent.parent.parent / ".env"
 load_dotenv(dotenv_path=env_path, override=True)
@@ -51,7 +52,7 @@ def get_client_embed(model_name: str) -> Tuple[Any, str]:
     else:
         raise ValueError(f"Embedding model {model_name} not supported.")
 
-    return client, model_name
+    return client, model_to_use
 
 
 def get_async_client_embed(model_name: str) -> Tuple[Any, str]:
