@@ -3,6 +3,7 @@ import json
 import os
 import time
 import numpy as np
+import inspect
 import pickle
 from concurrent.futures import Future, ProcessPoolExecutor, as_completed
 from typing import Callable, Any, Dict, List, Tuple, Optional, Union
@@ -79,6 +80,28 @@ def _extract_early_stop_score(
     return None
 
 
+def _call_aggregate_metrics_fn(
+    aggregate_metrics_fn: Callable,
+    all_run_results: List[Any],
+    all_run_kwargs: List[Dict[str, Any]],
+) -> Dict[str, Any]:
+    """
+    Calls aggregate_metrics_fn with all_run_results, and optionally all_run_kwargs
+    if the function accepts a second positional parameter.
+    """
+    sig = inspect.signature(aggregate_metrics_fn)
+    params = [
+        p for p in sig.parameters.values()
+        if p.kind not in (
+            inspect.Parameter.VAR_POSITIONAL,
+            inspect.Parameter.VAR_KEYWORD,
+        )
+    ]
+    if len(params) >= 2:
+        return aggregate_metrics_fn(all_run_results, all_run_kwargs)
+    return aggregate_metrics_fn(all_run_results)
+
+
 def save_json_results(
     results_dir: str,
     metrics: Dict[str, Any],
@@ -106,9 +129,11 @@ def run_shinka_eval(
     experiment_fn_name: str,
     num_runs: int,
     get_experiment_kwargs: Optional[Callable[[int], Dict[str, Any]]] = None,
-    aggregate_metrics_fn: Optional[Callable[[List[Any]], Dict[str, Any]]] = None,
-    validate_fn: Optional[Callable[[Any], Tuple[bool, Optional[str]]]] = None,
+    #aggregate_metrics_fn: Optional[Callable[[List[Any]], Dict[str, Any]]] = None,
+    #validate_fn: Optional[Callable[[Any], Tuple[bool, Optional[str]]]] = None,
     plotting_fn: Optional[Callable[[Any], List[Any]]] = None,
+    aggregate_metrics_fn: Optional[Callable[[List[Any], List[Dict[str, Any]]], Dict[str, Any]]] = None,
+    validate_fn: Optional[Callable[[[Any], Dict[str, Any]], Tuple[bool, Optional[str]]]] = None,
     default_metrics_on_error: Optional[Dict[str, Any]] = None,
     # Early stopping parameters
     early_stop_method: Optional[Union[str, EarlyStopMethod]] = None,
@@ -130,10 +155,11 @@ def run_shinka_eval(
         num_runs: Number of times to run the experiment function.
         get_experiment_kwargs: Opt. fn (run_idx_0_based -> kwargs_dict)
                                for experiment args. Seed passed if None.
-        aggregate_metrics_fn: Opt. fn (raw_results_list -> metrics_dict)
-                              for aggregation. If None, basic run stats
+        aggregate_metrics_fn: Opt. fn (raw_results_list, kwargs_list -> metrics_dict)
+                              for aggregation. Receives both results and the kwargs
+                              used for each run. If None, basic run stats
                               (count, time) are recorded.
-        validate_fn: Opt. fn (result -> (is_valid, error_msg)) to validate
+        validate_fn: Opt. fn (result, kwargs -> (is_valid, error_msg)) to validate
                        each run. Affects overall correctness.
         plotting_fn: Opt. fn (extra_data) -> List[(Figure|Animation, title)].
                      Returns list of (item, title) tuples. Title used as
@@ -187,6 +213,7 @@ def run_shinka_eval(
     num_invalid_runs = 0
 
     all_run_results: List[Any] = []
+    all_run_kwargs: List[Dict[str, Any]] = []
     execution_times: List[float] = []
 
     # Early stopping setup
@@ -232,6 +259,8 @@ def run_shinka_eval(
             )
             ordered_run_results: List[Any] = [None] * num_runs
             ordered_execution_times: List[float] = [0.0] * num_runs
+            ordered_run_kwargs: List[Dict[str, Any]] = [{}] * num_runs
+            
             run_completed: List[bool] = [False] * num_runs
             futures_to_indices: Dict[Future[Tuple[int, Any, float]], int] = {}
 
@@ -245,6 +274,8 @@ def run_shinka_eval(
                         if get_experiment_kwargs
                         else {"seed": i + 1}
                     )
+                    ordered_run_kwargs[i] = kwargs
+                    print("Reached here just fine, ")
                     try:
                         future = executor.submit(
                             _run_single_evaluation,
@@ -290,11 +321,13 @@ def run_shinka_eval(
 
                 run_result = ordered_run_results[i]
                 run_time = ordered_execution_times[i]
+                run_kwargs = ordered_run_kwargs[i]
                 all_run_results.append(run_result)
+                all_run_kwargs.append(run_kwargs)
                 execution_times.append(run_time)
 
                 if validate_fn:
-                    is_valid, validation_err_msg = validate_fn(run_result)
+                    is_valid, validation_err_msg = validate_fn(run_result, **run_kwargs)
                     if not is_valid:
                         num_invalid_runs += 1
                         overall_correct_flag = False
@@ -328,10 +361,11 @@ def run_shinka_eval(
                 end_time = time.perf_counter()
 
                 all_run_results.append(run_result)
+                all_run_kwargs.append(run_kwargs)
                 execution_times.append(end_time - start_time)
 
                 if validate_fn:
-                    is_valid, validation_err_msg = validate_fn(run_result)
+                    is_valid, validation_err_msg = validate_fn(run_result, **run_kwargs)
                     if not is_valid:
                         num_invalid_runs += 1
                         overall_correct_flag = False
@@ -371,7 +405,8 @@ def run_shinka_eval(
 
         metrics: Dict[str, Any]
         if aggregate_metrics_fn:
-            metrics = aggregate_metrics_fn(all_run_results)
+            #metrics = aggregate_metrics_fn(all_run_results, all_run_kwargs)
+            metrics = _call_aggregate_metrics_fn(aggregate_metrics_fn, all_run_results, all_run_kwargs)
         else:
             metrics = {"num_successful_runs": len(all_run_results)}
             if all_run_results:

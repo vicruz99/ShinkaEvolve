@@ -1,0 +1,12 @@
+evaluate_function:
+  _target_: examples.fAInance.evaluate.main
+  program_path: ???
+  results_dir: ???
+
+
+exp_name: "fAInance"
+
+evo_config:
+  language: python
+  job_type: "local"
+  python_path: "examples/fAInance/.venv/bin/python"

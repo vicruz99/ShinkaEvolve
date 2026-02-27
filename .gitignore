@@ -179,6 +179,10 @@ cython_debug/
 #------------------------------------------------------------------------------------------------------------------------------
 
 results/
+data/
+
+
+
 
 
 # Local environment variants (keep shareable template files tracked)

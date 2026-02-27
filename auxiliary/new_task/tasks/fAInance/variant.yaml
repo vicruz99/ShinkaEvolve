@@ -1,0 +1,25 @@
+defaults:
+  - override /database@_global_: island_small
+  - override /evolution@_global_: small_budget
+  - override /task@_global_: "fAInance"
+  - override /cluster@_global_: local
+  - _self_
+
+
+# Override specific parameters
+
+job_config:
+  python_path: python
+  time: "00:2:00"  # Max time for the entire job (HH:MM:SS)
+
+variant_suffix: _arima_simple
+
+evo_config:
+  init_program_path: "examples/fAInance/initial_open_evolve.py"
+  llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8080/v1"]
+  meta_llm_models: ["local-gptoss-unsloth-http://127.0.0.1:8080/v1"]
+  embedding_model: "local-nomic-embed-text:v1.5-http://localhost:11434/v1"
+  num_generations: 50
+  task_sys_msg: |
+      SETTING:
+      You are an expert in quantitative analysis of stocks.
