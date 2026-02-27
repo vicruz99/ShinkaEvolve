@@ -226,6 +226,32 @@ def get_async_client_llm(
             base_url=resolved.base_url,
             timeout=TIMEOUT,
         )
+    elif provider is None:
+        if "local" in model_name:
+
+            # Extract url from model_name
+            pattern = r"https?://"
+            match = re.search(pattern, model_name)
+            if match:
+                start_index = match.start()
+                url = model_name[start_index:]
+            else:
+                raise ValueError(f"Invalid URL in model name: {model_name}")
+            
+            # Extract model name from model_name
+            match = re.search(r"local-(.*?)-http", model_name)                          # when using vllm and open ai gpt oss 120b, because i am extracting model_name, so openai/..., the query that will be chosen is the one from open ai, instead of query local... a happy accident!
+            if match:
+                model_name = match.group(1)
+
+            client = openai.OpenAI(                                                                            # ADDED THIS LINE                
+                api_key="filler",                                                                                  # ADDED THIS LINE        
+                base_url=url
+                )                                                                                    # ADDED THIS LINE
+            if structured_output:                                                                        # ADDED THIS LINE              
+                client = instructor.from_openai(                                                             # ADDED THIS LINE      
+                    client,                                                                                    # ADDED THIS LINE    
+                    mode=instructor.Mode.JSON,                                                             # ADDED THIS LINE                
+                )      
     else:
         raise ValueError(f"Model {model_name} not supported.")
 

@@ -204,7 +204,8 @@ class AsyncEvolutionRunner:
         logger.info(f"Target generations: {self.evo_config.num_generations}")
         logger.info(f"Language: {self.evo_config.language}")
         logger.info(f"Results directory: {self.results_dir}")
-        logger.info(f"Log file: {log_filename}")
+        if self.verbose:
+            logger.info(f"Log file: {log_filename}")
         if self.evo_config.max_api_costs is not None:
             logger.info(f"Max API costs: ${self.evo_config.max_api_costs:.2f}")
         logger.info("=" * 80)

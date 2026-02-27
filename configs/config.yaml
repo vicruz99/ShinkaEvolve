@@ -12,6 +12,11 @@ run_name: ${now:%Y.%m.%d}${now:%H%M%S}
 
 output_dir: ${results_dir}/${exp_name}/${run_name}${variant_suffix}
 
+# ---- NEW: async runner options ----
+async_runner: false           # set to true to use AsyncEvolutionRunner
+max_evaluation_jobs: null     # null → defaults to evo_config.max_parallel_jobs
+max_proposal_jobs: 10         # max concurrent LLM proposal generation
+
 hydra:
   run:
     dir: ${output_dir}

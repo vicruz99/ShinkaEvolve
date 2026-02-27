@@ -40,13 +40,13 @@ def get_client_embed(model_name: str) -> Tuple[Any, str]:
         )
     elif provider == "google":
         client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
-        
+
     elif provider is None:
         if model_name.startswith("local-"):
             # Pattern: local-(model-name)-(http or https url)
             match = re.match(r"local-(.+?)-(https?://.+)", model_name)
             if match:
-                model_to_use = match.group(1)
+                model_name = match.group(1)
                 url = match.group(2)
             else:
                 raise ValueError(f"Invalid local model format: {model_name}")
@@ -61,7 +61,7 @@ def get_client_embed(model_name: str) -> Tuple[Any, str]:
     else:
         raise ValueError(f"Embedding model {model_name} not supported.")
 
-    return client, model_to_use
+    return client, model_name
 
 
 def get_async_client_embed(model_name: str) -> Tuple[Any, str]:
@@ -97,6 +97,17 @@ def get_async_client_embed(model_name: str) -> Tuple[Any, str]:
             base_url="https://openrouter.ai/api/v1",
             timeout=TIMEOUT,
         )
+    elif provider is None:
+        if model_name.startswith("local-"):
+            # Pattern: local-(model-name)-(http or https url)
+            match = re.match(r"local-(.+?)-(https?://.+)", model_name)
+            if match:
+                model_name = match.group(1)
+                url = match.group(2)
+            else:
+                raise ValueError(f"Invalid local model format: {model_name}")
+            client = openai.AsyncOpenAI(base_url=url,
+                                api_key="filler") 
     else:
         raise ValueError(f"Embedding model {model_name} not supported.")
 
