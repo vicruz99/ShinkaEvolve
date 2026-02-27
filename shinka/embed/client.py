@@ -52,6 +52,7 @@ def get_client_embed(model_name: str) -> Tuple[Any, str]:
                 raise ValueError(f"Invalid local model format: {model_name}")
             client = openai.OpenAI(base_url=url,
                                 api_key="filler") 
+                                
     elif provider == "openrouter":
         client = openai.OpenAI(
             api_key=os.environ["OPENROUTER_API_KEY"],

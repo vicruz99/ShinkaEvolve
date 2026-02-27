@@ -145,7 +145,8 @@ class EmbeddingClient:
             response = self.client.embeddings.create(
                 model=self.model, input=code, encoding_format="float"
             )
-            cost = response.usage.total_tokens * get_model_price(self.model_name)
+            #cost = response.usage.total_tokens * get_model_price(self.model_name)
+            cost = 0
             # Extract embedding from response
             if single_code:
                 return response.data[0].embedding, cost
@@ -411,7 +412,8 @@ class AsyncEmbeddingClient:
             response = await self.async_client.embeddings.create(
                 model=self.model, input=code, encoding_format="float"
             )
-            cost = response.usage.total_tokens * get_model_price(self.model_name)
+            #cost = response.usage.total_tokens * get_model_price(self.model_name)
+            cost = 0
             if single_code:
                 return response.data[0].embedding, cost
             else:
