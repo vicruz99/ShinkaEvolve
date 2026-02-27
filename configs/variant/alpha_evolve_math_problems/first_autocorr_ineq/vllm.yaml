@@ -7,16 +7,25 @@ defaults:
 
 # Override specific parameters
 
-variant_suffix: _open_evolve
+variant_suffix: _vllm
 
 job_config:
   python_path: examples/alpha_evolve_math_problems/.venv/bin/python
   time: "00:2:00"  # Max time for the entire job (HH:MM:SS)
 
+
+# Enable async runner for this variant
+async_runner: true
+max_evaluation_jobs: 15     # matches large_budget's max_parallel_jobs
+max_proposal_jobs: 15
+
+
 evo_config:
   init_program_path: "examples/alpha_evolve_math_problems/first_autocorr_ineq/initial_open_evolve.py"
-  llm_models: [local/openai/gpt-oss-120b@http://localhost:8080/v1]
-  meta_llm_models: [local/openai/gpt-oss-120b@http://localhost:8080/v1]
+  #llm_models: ["local-openai/gpt-oss-120b-http://127.0.0.1:8000/v1"]
+  llm_models: [local/openai/gpt-oss-120b@http://localhost:8000/v1]
+  #meta_llm_models: ["local-openai/gpt-oss-120b-http://127.0.0.1:8000/v1"]
+  meta_llm_models: [local/openai/gpt-oss-120b@http://localhost:8000/v1]
   embedding_model: "local-nomic-embed-text:v1.5-http://localhost:11434/v1"
   num_generations: 500
   task_sys_msg: |
