@@ -129,8 +129,6 @@ def run_shinka_eval(
     experiment_fn_name: str,
     num_runs: int,
     get_experiment_kwargs: Optional[Callable[[int], Dict[str, Any]]] = None,
-    #aggregate_metrics_fn: Optional[Callable[[List[Any]], Dict[str, Any]]] = None,
-    #validate_fn: Optional[Callable[[Any], Tuple[bool, Optional[str]]]] = None,
     plotting_fn: Optional[Callable[[Any], List[Any]]] = None,
     aggregate_metrics_fn: Optional[Callable[[List[Any], List[Dict[str, Any]]], Dict[str, Any]]] = None,
     validate_fn: Optional[Callable[[[Any], Dict[str, Any]], Tuple[bool, Optional[str]]]] = None,
