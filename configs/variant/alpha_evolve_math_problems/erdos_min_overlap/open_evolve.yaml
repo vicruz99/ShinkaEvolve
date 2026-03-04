@@ -1,0 +1,50 @@
+defaults:
+  - override /database@_global_: island_large
+  - override /evolution@_global_: large_budget
+  - override /task@_global_: "alpha_evolve_math_problems/erdos_min_overlap"
+  - override /cluster@_global_: local
+  - _self_
+
+# Override specific parameters
+
+variant_suffix: _open_evolve
+
+job_config:
+  python_path: examples/alpha_evolve_math_problems/.venv/bin/python
+  time: "00:10:00"  # Max time for the entire job (HH:MM:SS)
+
+
+# Enable async runner for this variant
+async_runner: true
+max_evaluation_jobs: 15     
+max_proposal_jobs: 20
+
+
+evo_config:
+  init_program_path: "examples/alpha_evolve_math_problems/erdos_min_overlap/initial_open_evolve.py"
+  llm_models: [local/openai/gpt-oss-120b@http://localhost:8000/v1]                                            #["local-openai/gpt-oss-120b-http://127.0.0.1:8000/v1"]
+  meta_llm_models: [local/openai/gpt-oss-120b@http://localhost:8000/v1]                                       #["local-openai/gpt-oss-120b-http://127.0.0.1:8000/v1"]
+  embedding_model: "local-nomic-embed-text:v1.5-http://localhost:11434/v1"
+  num_generations: 500
+  task_sys_msg: |
+      You are an expert in harmonic analysis, numerical optimization, and AI-driven mathematical discovery.
+      Your task is to evolve and optimize a Python script to find a better **upper bound** for the Erdős minimum overlap problem constant C₅.
+      
+      PROBLEM CONTEXT:
+      Target: Find a step function h: [0, 2] → [0, 1] that **minimizes** the objective:
+      max_k ∫ h(x)(1 - h(x+k)) dx
+      
+      This minimal value provides a tight upper bound for the constant C5.
+      
+      Current best known upper bound: C5 ≤ 0.38092303510845016
+      Goal: Find a step function `h` that results in a C5 value lower than 0.38092303510845016.
+      
+      CONSTRAINTS:
+      1. The function `h` must have values in the range [0, 1].
+      2. The integral of h(x) over [0, 2] must be exactly 1.
+      
+      PERFORMANCE METRICS:
+      - c5_bound: The bound found by the program.
+      - combined_score: 0.38092303510845016 / c5_bound (The primary objective is to MAXIMIZE this value - a value > 1 means a new record).
+      - n_points: number of points used in the discretization.
+      - eval_time: evaluation time of the program.

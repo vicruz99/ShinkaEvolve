@@ -1,0 +1,72 @@
+defaults:
+  - override /database@_global_: island_large
+  - override /evolution@_global_: large_budget
+  - override /task@_global_: "alpha_evolve_math_problems/erdos_min_overlap"
+  - override /cluster@_global_: local
+  - _self_
+
+# Override specific parameters
+
+variant_suffix: _test_time
+
+job_config:
+  python_path: examples/alpha_evolve_math_problems/.venv/bin/python
+  time: "00:10:00"  # Max time for the entire job (HH:MM:SS)
+
+
+# Enable async runner for this variant
+async_runner: true
+max_evaluation_jobs: 15  
+max_proposal_jobs: 20
+
+
+evo_config:
+  init_program_path: "examples/alpha_evolve_math_problems/erdos_min_overlap/initial_test_time.py"
+  llm_models: [local/openai/gpt-oss-120b@http://localhost:8001/v1]                                            #["local-openai/gpt-oss-120b-http://127.0.0.1:8000/v1"]
+  meta_llm_models: [local/openai/gpt-oss-120b@http://localhost:8001/v1]                                       #["local-openai/gpt-oss-120b-http://127.0.0.1:8000/v1"]
+  embedding_model: "local-nomic-embed-text:v1.5-http://localhost:11434/v1"
+  num_generations: 500
+  
+  # ThetaEvolve seems to use a combination of prompts - I don't think this is supported in ShinkaEvolve
+  task_sys_msg: |
+        You are an expert in harmonic analysis, numerical optimization, and mathematical discovery.
+        Your task is to find an improved upper bound for the Erdős minimum overlap problem constant C₅.
+
+        ## Problem
+
+        Find a step function h: [0, 2] → [0, 1] that **minimizes** the overlap integral:
+
+        $$C_5 = \\max_k \\int h(x)(1 - h(x+k)) dx$$
+
+        **Constraints**:
+        1. h(x) ∈ [0, 1] for all x
+        2. ∫₀² h(x) dx = 1
+
+        **Discretization**: Represent h as n_points samples over [0, 2].
+        With dx = 2.0 / n_points:
+        - 0 ≤ h[i] ≤ 1 for all i
+        - sum(h) * dx = 1 (equivalently: sum(h) == n_points / 2 exactly)
+
+        The evaluation computes: C₅ = max(np.correlate(h, 1-h, mode="full") * dx)
+
+        Smaller sequences with less than 1k samples are preferred - they are faster to optimize and evaluate.
+
+        **Lower C₅ values are better** - they provide tighter upper bounds on the Erdős constant.
+
+        ## Budget & Resources
+        - **Time budget**: 1000s for your code to run
+        - **CPUs**: 2 available
+
+        ## Rules
+        - Define `run()` that returns `(h_values, c5_bound, n_points)`
+        - Use scipy, numpy, cvxpy[CBC,CVXOPT,GLOP,GLPK,GUROBI,MOSEK,PDLP,SCIP,XPRESS,ECOS], math
+        - Make all helper functions top level, no closures or lambdas
+        - No filesystem or network IO
+        - `evaluate_erdos_solution()` and `initial_h_values` (an initial construction, if available) are pre-imported
+        - Your function must complete within budget_s seconds and return the best solution found
+
+        **Lower is better**. Current record: C₅ ≤ 0.38092. Our goal is to find a construction that shows C₅ ≤ 0.38080.
+
+        Reason about how you could further improve this result.
+        Ideally, try to do something different than the above algorithm. Could be using different algorithmic ideas, adjusting your heuristics, adjusting / sweeping your hyperparemeters, etc. 
+        Unless you make a meaningful improvement, you will not be rewarded.
