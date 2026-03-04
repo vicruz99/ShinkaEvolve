@@ -47,17 +47,8 @@ def validate_sequence(run_output: Any, atol=1e-6) -> Tuple[bool, str]:
 def get_experiment_kwargs(run_index: int) -> Dict[str, Any]:
     return {}
 
-def aggregate_metrics(results: List[Any], results_dir: str) -> Dict[str, Any]:
-    """
-    Calculates the score based on the validated sequence.
-    """
-    if not results:
-        return {"combined_score": 0.0, "error": "No results"}
 
-    # We assume num_runs=1, so we take the first result
-    sequence = results[0]
-
-    # Apply the logic from the original evaluate_sequence
+def compute_c1(sequence: List[float]) -> float:
     sequence = [float(x) for x in sequence]
     sequence = [max(0, x) for x in sequence]
     sequence = [min(10000000.0, x) for x in sequence]
@@ -69,16 +60,38 @@ def aggregate_metrics(results: List[Any], results_dir: str) -> Dict[str, Any]:
     
     # Calculate c1 as per original script
     c1 = float(2 * n * max_b / (sum_a**2))
+
+    return c1
+
+def aggregate_metrics(results: List[Any]) -> Dict[str, Any]:
+    """
+    Calculates the score based on the validated sequence.
+    """
+    if not results:
+        return {"combined_score": 0.0, "error": "No results"}
+
+    c1_results = []
+    best_c1 = float('inf')
+    for sequence in results:
+        sequence = np.asarray(sequence, dtype=float)
+        c1 = compute_c1(sequence)
+        c1_results.append(c1)
+        if c1 < best_c1:
+            best_c1 = c1
+            best_sequence = sequence
     
     # Shinka maximizes 'combined_score'.
-    score = BENCHMARK / c1 if c1 != 0 else 0.0
+    score = BENCHMARK / best_c1 if best_c1 != 0 else 0.0
 
     metrics = {
         "combined_score": score,
-        "c1": c1,
-        "inv_c1": 1.0 / c1 if c1 != 0 else 0.0,
-        "sequence_length": n,
-        "sum_a": float(sum_a)
+        "best_c1": best_c1,
+        "inv_best_c1": 1.0 / c1 if c1 != 0 else 0.0,
+        "best_sequence_length": n,
+        "c1_mean": float(np.mean(c1_results)),
+        "c1_std": float(np.std(c1_results)),
+        "c1": c1_results,
+        "best_sequence": list(best_sequence),
     }
     
     return metrics
@@ -90,10 +103,10 @@ def main(program_path: str, results_dir: str):
         program_path=program_path,
         results_dir=results_dir,
         experiment_fn_name="run",
-        num_runs=1,
+        num_runs=10,                      # CHANGE THIS TO 1, TO GET ONLY ONE EVALUATION PER PROGRAM VARIANT - IT MAY BE USEFUL TO INCREASE THIS AS SOME PROGRAMS ARE NOT DETERMINISTIC AND INSTEAD SEARCH FOR SOLUTIONS
         get_experiment_kwargs=get_experiment_kwargs,
         validate_fn=validate_sequence,
-        aggregate_metrics_fn=lambda r: aggregate_metrics(r, results_dir),
+        aggregate_metrics_fn=aggregate_metrics,
     )
 
     if correct:

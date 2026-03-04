@@ -1,6 +1,6 @@
 defaults:
-  - override /database@_global_: island_medium
-  - override /evolution@_global_: medium_budget
+  - override /database@_global_: island_large
+  - override /evolution@_global_: large_budget
   - override /task@_global_: "alpha_evolve_math_problems/first_autocorr_ineq"
   - override /cluster@_global_: local
   - _self_
@@ -13,14 +13,20 @@ job_config:
   python_path: examples/alpha_evolve_math_problems/.venv/bin/python
   time: "00:2:00"  # Max time for the entire job (HH:MM:SS)
 
+# Enable async runner for this variant
+async_runner: true
+max_evaluation_jobs: 15     
+max_proposal_jobs: 20
+
+
+
 evo_config:
   init_program_path: "examples/alpha_evolve_math_problems/first_autocorr_ineq/initial_open_evolve.py"
-  llm_models: [local/openai/gpt-oss-120b@http://localhost:8080/v1]
-  meta_llm_models: [local/openai/gpt-oss-120b@http://localhost:8080/v1]
+  llm_models: [local/openai/gpt-oss-120b@http://localhost:8000/v1]
+  meta_llm_models: [local/openai/gpt-oss-120b@http://localhost:8000/v1]
   embedding_model: "local-nomic-embed-text:v1.5-http://localhost:11434/v1"
   num_generations: 500
   task_sys_msg: |
-      SETTING:
       You are an expert in functional analysis, harmonic analysis, numerical optimization, and AI-driven mathematical discovery.
       Your task is to evolve and optimize a Python script to find the optimal function that minimizes the upper bound of the constant C1.
       

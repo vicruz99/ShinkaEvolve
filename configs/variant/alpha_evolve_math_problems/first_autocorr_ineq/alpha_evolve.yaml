@@ -1,0 +1,48 @@
+defaults:
+  - override /database@_global_: island_large
+  - override /evolution@_global_: large_budget
+  - override /task@_global_: "alpha_evolve_math_problems/first_autocorr_ineq"
+  - override /cluster@_global_: local
+  - _self_
+
+# Override specific parameters
+
+variant_suffix: _alpha_evolve
+
+job_config:
+  python_path: examples/alpha_evolve_math_problems/.venv/bin/python
+  time: "00:17:00"  # Max time for the entire job (HH:MM:SS) - 17 ~ 1000 seconds
+
+# Enable async runner for this variant
+async_runner: true
+max_evaluation_jobs: 3     
+max_proposal_jobs: 3
+
+
+evo_config:
+  init_program_path: "examples/alpha_evolve_math_problems/first_autocorr_ineq/initial_alpha_evolve.py"
+  llm_models: [local/openai/gpt-oss-120b@http://localhost:8000/v1]
+  meta_llm_models: [local/openai/gpt-oss-120b@http://localhost:8000/v1]
+  embedding_model: "local-nomic-embed-text:v1.5-http://localhost:11434/v1"
+  num_generations: 500
+  task_sys_msg: |
+      Act as an expert software developer and inequality specialist specializing in creating step functions with certain properties.
+
+      Your task is to generate the sequence of non-negative heights of a step functions, that minimizes the following evaluation function:
+
+      def evaluate_sequence(sequence: list[float]) -> float:    # simplified version, without the security checks
+
+        n = len(sequence)
+        b_sequence = np.convolve(sequence, sequence)
+        max_b = max(b_sequence)
+        sum_a = np.sum(sequence)
+        return float(2 * n * max_b / (sum_a**2))
+
+      Your task is to write a search function that searches for the best sequence of coefficients. Your function will have 1000 seconds to run, and after that it
+      has to have returned the best sequence it found. If after 1000 seconds it has not returned anything, it will be terminated with negative infinity points. All
+      numbers in your sequence have to be positive or zero.
+
+      You may code up any search method you want, and you are allowed to call the evaluate_sequence() function as many times as you want. You have access to it,
+      you don't need to code up the evaluate_sequence() function.
+
+      You may want to start your search from the best construction we have found so far, which you can access through the 'get_best_sequence_prev()' function.

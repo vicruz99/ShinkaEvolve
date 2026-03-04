@@ -12,16 +12,22 @@ with the lower bound proven by [Cloninger and Steinerberger (2017)](https://www.
 
 ## Implementation in ShinkaEvolve
 
-This folder contains an implementation of the problem detailed in **Annex B.1** of the AlphaEvolve paper [1]. 
+This folder contains an implementation of the problem detailed in **Annex B.1** of the AlphaEvolve paper [1] [2]. I highly suggest checking out the [Google DeepMind Colab](https://colab.research.google.com/github/google-deepmind/alphaevolve_results/blob/master/mathematical_results.ipynb#scrollTo=IBOyCNqLeJ2S) for further insights and explanations on how AlphaEvolve approached this problem.
 
-Because the original AlphaEvolve codebase is not publicly available, this implementation was adapted from open-source implementations to work within ShinkaEvolve.
-All credits go to the authors of the original code. The files in this repository were adapted for ShinkaEvolve from the following sources:
+The implementation was adapted from open-source code and the notebook [Google DeepMind Colab](https://colab.research.google.com/github/google-deepmind/alphaevolve_results/blob/master/mathematical_results.ipynb#scrollTo=IBOyCNqLeJ2S). All credits go to the authors of the original code. 
 
-* **Verification Code:** Adapted from the [Test-time-discover repository [2]](https://github.com/test-time-training/discover/blob/main/tasks/alphaevolve_ac/verifier_ae.py).
-* **Initial Programs:** Two variations are included, alongside their respective configuration files.
-    * *Variation 1:* Sourced from [Test-time-discover [2] repository](https://github.com/test-time-training/discover/blob/main/tasks/alphaevolve_ac/prompt.py).
-    * *Variation 2:* Sourced from OpenEvolve (originally implemented by Codeevolve). See the [source file](https://github.com/algorithmicsuperintelligence/openevolve/blob/main/examples/alphaevolve_math_problems/first_autocorr_ineq/initial_program.py) and [Pull Request #302](https://github.com/algorithmicsuperintelligence/openevolve/pull/302).
+The files in this repository were adapted for ShinkaEvolve from the following sources:
 
+* **Verification Code:** Adapted from [Google DeepMind Colab](https://colab.research.google.com/github/google-deepmind/alphaevolve_results/blob/master/mathematical_results.ipynb#scrollTo=IBOyCNqLeJ2S).
+* **Initial Programs:** Three variations are included:
+    * **Variation 1 (`initial_alpha_evolve.py`):** Sourced from [Google DeepMind Colab](https://colab.research.google.com/github/google-deepmind/alphaevolve_results/blob/master/mathematical_results.ipynb#scrollTo=IBOyCNqLeJ2S). This variation takes 1000 seconds per evaluation and allows starting from a previous best-known sequence (`best_sequence_prev_alpha_evolve.txt`).
+    * **Variation 2 (`initial_test_time_discover.py`):** Sourced from the [Test-time-discover [3] repository](https://github.com/test-time-training/discover/blob/main/tasks/alphaevolve_ac/prompt.py). It is similar to Variation 1 but runs evaluations faster.
+    * **Variation 3 (`initial_open_evolve.py`):** Sourced from **OpenEvolve** (originally implemented by CodeEvolve). See the [source file](https://github.com/algorithmicsuperintelligence/openevolve/blob/main/examples/alphaevolve_math_problems/first_autocorr_ineq/initial_program.py) and [Pull Request #302](https://github.com/algorithmicsuperintelligence/openevolve/pull/302).
+
+
+> **Note:** Variation 1 and 3 make available the evaluation function in the initial program files in the case AlphaEvolve wishes to use it inside the evolve program.
+
+These problems are run with more than one run, as some of the returned solutions are search algorithms that don't always return the same sequence of heights.
 
 ## Results with ShinkaEvolve
 
@@ -33,7 +39,7 @@ Using **GPT-oss-120b** as the underlying LLM, we evaluated the best $C_1$ score 
 | **OpenEvolve** | 0.997 |`1.5103567661361352` | GPT-oss-120b | Medium | Medium | 500 | configs/variant/alpha_evolve_math_problems/first_autocorr_ineq/open_evolve.yaml
 | **Test-time-discover** | 0.985 |  `1.5279153570786084` | GPT-oss-120b | Medium | Medium | 500 | configs/variant/alpha_evolve_math_problems/first_autocorr_ineq/test_time_discover.yaml
 
-> **Note:** AlphaEvolve [1] got 1.5053. Test-time discover [2] got 1.50287. 
+> **Note:** AlphaEvolve [1] got 1.5053. AlphaEvolve v2 got 1.50317 [2]. Test-time discover [3] got 1.50287. 
 
 Feel free to add your own results!
 
@@ -51,15 +57,17 @@ To reproduce these results or run your own evolution experiments, follow these s
 
 
 ----
+
 ## References
 
-[1] **AlphaEvolve:** Novikov, A., Vũ, N., Eisenberger, M., Dupont, E., Huang, P.-S., Wagner, A. Z., ... & Balog, M. (2025). *AlphaEvolve: A coding agent for scientific and algorithmic discovery*. arXiv preprint [arXiv:2506.13131](https://arxiv.org/abs/2506.13131).
+[1] **AlphaEvolve:** Novikov, A., et al. (2025). *AlphaEvolve: A coding agent for scientific and algorithmic discovery*. arXiv preprint [arXiv:2506.13131](https://arxiv.org/abs/2506.13131).
+* **DeepMind Repository:** [Autocorrelation Problems Notebook](https://github.com/google-deepmind/alphaevolve_repository_of_problems/blob/main/experiments/autocorrelation_problems/autocorrelation_problems.ipynb)
 
-[2] **Test-time Discover:** Yuksekgonul, M., Koceja, D., Li, X., Bianchi, F., McCaleb, J., Wang, X., ... & Sun, Y. (2026). *Learning to Discover at Test Time*. arXiv preprint [arXiv:2601.16175](https://arxiv.org/abs/2601.16175).
+[2] **Mathematical Exploration and Discovery At Scale:** Google DeepMind (2025). [arXiv:2511.02864](https://arxiv.org/pdf/2511.02864).
+* **Google DeepMind Colab:** [Mathematical Results](https://colab.research.google.com/github/google-deepmind/alphaevolve_results/blob/master/mathematical_results.ipynb#scrollTo=IBOyCNqLeJ2S)
 
-[3] **CodeEvolve:** Assumpção, H., Ferreira, D., Campos, L., & Murai, F. (2025). *CodeEvolve: An open source evolutionary coding agent for algorithm discovery and optimization*. arXiv preprint [arXiv:2510.14150](https://arxiv.org/abs/2510.14150).
+[3] **Test-time Discover:** Yuksekgonul, M., et al. (2026). *Learning to Discover at Test Time*. arXiv preprint [arXiv:2601.16175](https://arxiv.org/abs/2601.16175).
 
-[4] **OpenEvolve:** Sharma, A. (2025). *OpenEvolve: Open-source implementation of AlphaEvolve*. [GitHub Repository](https://github.com/algorithmicsuperintelligence/openevolve).
+[4] **CodeEvolve:** Assumpção, H., et al. (2025). *CodeEvolve: An open source evolutionary coding agent for algorithm discovery and optimization*. arXiv preprint [arXiv:2510.14150](https://arxiv.org/abs/2510.14150).
 
-**External Links:**
-* [Google DeepMind Colab](https://colab.research.google.com/github/google-deepmind/alphaevolve_results/blob/master/mathematical_results.ipynb#scrollTo=IBOyCNqLeJ2S) — Check the original result from AlphaEvolve and view a simplified version of the verification code provided by Google.
+[5] **OpenEvolve:** Sharma, A. (2025). *OpenEvolve: Open-source implementation of AlphaEvolve*. [GitHub Repository](https://github.com/algorithmicsuperintelligence/openevolve).
